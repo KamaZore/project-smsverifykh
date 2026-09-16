@@ -1,0 +1,35 @@
+{
+  "name": "smsverify-kh-backend",
+  "version": "1.0.0",
+  "description": "SMS Notification Backend Service - HERO SMS API Integration",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "build": "node esbuild.config.js",
+    "start:prod": "node dist/server.js",
+    "lint": "echo \"No linter configured yet\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.24.4",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "ISC"
+}

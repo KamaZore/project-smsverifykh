@@ -1,0 +1,743 @@
+{
+  "info": {
+    "_postman_id": "f2c9a1b3-91d4-4e7b-8a1f-7d5c0f3e2b9a",
+    "name": "SMSVerifyKh - HERO SMS API Tests",
+    "description": "Postman collection to test all routes of the SMSVerifyKh backend (HERO SMS integration).\n\nBefore testing:\n1. Make sure the backend is running: cd backend  =>  npm run dev\n2. Put your real HERO SMS API key in backend/.env => HERO_SMS_API_KEY=your_key\n3. Base URL default: http://localhost:5000 (edit the {{base_url}} variable if your port changed)\n\nIf a response shows success:false, check that HERO_SMS_API_KEY is valid and that the service/country ids exist on hero-sms.com.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "service", "value": "tg" },
+    { "key": "country", "value": "6" },
+    { "key": "activation_id", "value": "1" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Attach Bearer token automatically to protected routes",
+          "const url = pm.request.url.toString();",
+          "const isPublic = url.includes('/health') || url.includes('/api/auth/register') || url.includes('/api/auth/login') || url.includes('/api/auth/refresh');",
+          "if (!isPublic) {",
+          "  const token = pm.collectionVariables.get('access_token');",
+          "  if (token) pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+{
+      "name": "0. Auth (JWT)",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demouser\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"Secret123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Create an account. The accessToken/refreshToken are saved automatically into the collection variables."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Register returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+                  "const d = pm.response.json();",
+                  "if (d.success && d.data && d.data.accessToken) {",
+                  "  pm.collectionVariables.set('access_token', d.data.accessToken);",
+                  "  pm.collectionVariables.set('refresh_token', d.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"Secret123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login. The accessToken/refreshToken are saved automatically into the collection variables."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+                  "const d = pm.response.json();",
+                  "if (d.success && d.data && d.data.accessToken) {",
+                  "  pm.collectionVariables.set('access_token', d.data.accessToken);",
+                  "  pm.collectionVariables.set('refresh_token', d.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Exchange the refresh token for a new token pair."
+          }
+        },
+        {
+          "name": "GET /api/auth/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get the current user profile (protected - uses the saved Bearer token)."
+          }
+        }
+      ]
+    },
+{
+      "name": "1. User (JWT protected)",
+      "item": [
+        {
+          "name": "GET /api/user/profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "profile"]
+            },
+            "description": "View profile (requires Bearer token - added automatically)."
+          }
+        },
+        {
+          "name": "GET /api/user/balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/user/balance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "balance"]
+            },
+            "description": "Get wallet balance."
+          }
+        },
+        {
+          "name": "GET /api/user/transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/user/transactions?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Get wallet transactions."
+          }
+        },
+        {
+          "name": "POST /api/user/rent-number",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service\": \"{{service}}\",\n  \"country\": {{country}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user/rent-number",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "rent-number"]
+            },
+            "description": "Rent a HERO SMS number and store it in the local database."
+          }
+        }
+      ]
+    },
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Server health check. Should return { status: \"ok\" }."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Health returns HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Body contains status: ok', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. V1 Endpoints  (/api/v1)",
+      "item": [
+        {
+          "name": "GET /api/v1/getNumber",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getNumber?service={{service}}&country={{country}}&maxPrice=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getNumber"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" },
+                { "key": "maxPrice", "value": "50", "description": "optional" }
+              ]
+            },
+            "description": "Purchase a phone number. Returns ACCESS_NUMBER:id:phone in data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "if (body.success === false) {",
+                  "  console.log('Error:', JSON.stringify(body.error));",
+                  "} else {",
+                  "  pm.expect(body.data).to.be.a('string');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/setStatus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/setStatus?id={{activation_id}}&status=get_sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "setStatus"],
+              "query": [
+                { "key": "id", "value": "{{activation_id}}" },
+                { "key": "status", "value": "get_sms", "description": "get_sms | refuse | used" }
+              ]
+            },
+            "description": "Set activation status. status values: get_sms, refuse, used."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+,
+        {
+          "name": "GET /api/v1/getStatus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getStatus?id={{activation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getStatus"],
+              "query": [{ "key": "id", "value": "{{activation_id}}" }]
+            },
+            "description": "Get the SMS code for an activation. Expect STATUS_OK:code when available."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getPrices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getPrices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getPrices"]
+            },
+            "description": "Get pricing for all services."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getBalance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getBalance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getBalance"]
+            },
+            "description": "Get HERO SMS account balance. Validates that HERO_SMS_API_KEY works."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "console.log('Balance result:', JSON.stringify(body.data));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getServiceNumbersCount",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getServiceNumbersCount?service={{service}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getServiceNumbersCount"],
+              "query": [{ "key": "service", "value": "{{service}}" }]
+            },
+            "description": "Get available number count for a service."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+,
+        {
+          "name": "GET /api/v1/getProviders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getProviders?service={{service}}&country={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getProviders"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" }
+              ]
+            },
+            "description": "Get providers for a service/country pair."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getServicesList",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getServicesList",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getServicesList"]
+            },
+            "description": "List all available services."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getCountries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getCountries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getCountries"]
+            },
+            "description": "List all available countries."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/getActiveActivations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/getActiveActivations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "getActiveActivations"]
+            },
+            "description": "List active activations (proxied from handler_api.php)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+{
+      "name": "2. V2 Endpoints  (/api/v2)",
+      "item": [
+        {
+          "name": "GET /api/v2/getFreePrices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/getFreePrices?service={{service}}&country={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "getFreePrices"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" }
+              ]
+            },
+            "description": "Get free pricing info (V2)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/getPricesV2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/getPricesV2?service={{service}}&country={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "getPricesV2"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" }
+              ]
+            },
+            "description": "Get prices (V2 format)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/getNumberV2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/getNumberV2?service={{service}}&country={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "getNumberV2"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" }
+              ]
+            },
+            "description": "Purchase a number (V2) - returns a JSON object with activation info."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/getStatusV2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/getStatusV2?id={{activation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "getStatusV2"],
+              "query": [{ "key": "id", "value": "{{activation_id}}" }]
+            },
+            "description": "Get SMS code (V2 format)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/setStatusV2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/setStatusV2?id={{activation_id}}&status=refuse",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "setStatusV2"],
+              "query": [
+                { "key": "id", "value": "{{activation_id}}" },
+                { "key": "status", "value": "refuse", "description": "get_sms | refuse | used" }
+              ]
+            },
+            "description": "Set activation status (V2)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+{
+      "name": "3. V3 Endpoints  (/api/v3)",
+      "item": [
+        {
+          "name": "GET /api/v3/getPricesV3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v3/getPricesV3?service={{service}}&country={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v3", "getPricesV3"],
+              "query": [
+                { "key": "service", "value": "{{service}}" },
+                { "key": "country", "value": "{{country}}" }
+              ]
+            },
+            "description": "Get prices with provider breakdown (V3)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v3/getOffers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v3/getOffers?services={{service}}&countries={{country}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v3", "getOffers"],
+              "query": [
+                { "key": "services", "value": "{{service}}" },
+                { "key": "countries", "value": "{{country}}" }
+              ]
+            },
+            "description": "Combined price + stock showcase. Both query params are optional."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
